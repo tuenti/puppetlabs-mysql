@@ -1,12 +1,12 @@
 # See README.me for options.
-class mysql::server::config {
+class mysql::server::config (Hash $name) {
 
-  $options = $mysql::server::options
-  $includedir = $mysql::server::includedir
+  $options = $mysql::server::$name::options
+  $includedir = $mysql::server::$name::includedir
 
   File {
     owner  => 'root',
-    group  => $mysql::server::root_group,
+    group  => $mysql::server::$name::root_group,
     mode   => '0400',
   }
 
@@ -31,7 +31,7 @@ class mysql::server::config {
 
   if $mysql::server::manage_config_file  {
     file { 'mysql-config-file':
-      path                    => $mysql::server::config_file,
+      path                    => $mysql::server::$name::config_file,
       content                 => template('mysql/my.cnf.erb'),
       mode                    => '0644',
       selinux_ignore_defaults => true,
