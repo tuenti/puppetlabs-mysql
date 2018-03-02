@@ -1,6 +1,6 @@
 # Class: mysql::server:  See README.md for documentation.
 class mysql::server (
-  $instances               = $mysql::params::instances,
+  $instances               = {},
   $package_ensure          = $mysql::params::server_package_ensure,
   $package_manage          = $mysql::params::server_package_manage,
   $package_name            = $mysql::params::server_package_name,
@@ -10,5 +10,5 @@ class mysql::server (
 
   include '::mysql::server::install'
 
-  create_resources('mysql::server::resource::instance', $instance)
+  create_resources('mysql::server::resource::instance', $instances)
 }
