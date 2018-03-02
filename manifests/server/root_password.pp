@@ -1,8 +1,11 @@
 #
-class mysql::server::root_password {
-
-  $options = $mysql::server::options
-  $secret_file = $mysql::server::install_secret_file
+class mysql::server::root_password (
+  $options,
+  $secret_file,
+  $create_root_user,
+  $create_root_my_cnf,
+  $root_password
+){
 
   # New installations of MySQL will configure a default random password for the root user
   # with an expiration. No actions can be performed until this password is changed. The
@@ -19,15 +22,15 @@ class mysql::server::root_password {
   }
 
   # manage root password if it is set
-  if $mysql::server::create_root_user == true and $mysql::server::root_password != 'UNSET' {
+  if $create_root_user == true and $root_password != 'UNSET' {
     mysql_user { 'root@localhost':
       ensure        => present,
-      password_hash => mysql_password($mysql::server::root_password),
+      password_hash => mysql_password($root_password),
       require       => Exec['remove install pass']
     }
   }
 
-  if $mysql::server::create_root_my_cnf == true and $mysql::server::root_password != 'UNSET' {
+  if $create_root_my_cnf == true and $root_password != 'UNSET' {
     file { "${::root_home}/.my.cnf":
       content => template('mysql/my.cnf.pass.erb'),
       owner   => 'root',
@@ -38,9 +41,8 @@ class mysql::server::root_password {
     if versioncmp($::puppetversion, '3.0') >= 0 {
       File["${::root_home}/.my.cnf"] { show_diff => false }
     }
-    if $mysql::server::create_root_user == true {
+    if $create_root_user == true {
       Mysql_user['root@localhost'] -> File["${::root_home}/.my.cnf"]
     }
   }
-
 }

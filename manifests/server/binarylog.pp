@@ -1,8 +1,8 @@
 # Binary log configuration requires the mysql user to be present. This must be done after package install
-class mysql::server::binarylog {
-
-  $options = $mysql::server::options
-  $includedir = $mysql::server::includedir
+class mysql::server::binarylog (
+  $options,
+  $includedir,
+  ) {
 
   $logbin = pick($options['mysqld']['log-bin'], $options['mysqld']['log_bin'], false)
 

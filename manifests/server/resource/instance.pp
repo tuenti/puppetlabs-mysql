@@ -13,7 +13,7 @@ define mysql::server::resource::instance (
   $root_password           = $mysql::params::root_password,
   $service_enabled         = $mysql::params::server_service_enabled,
   $service_manage          = $mysql::params::server_service_manage,
-  $service_name            = mysql
+  $service_name            = $mysql::params::servier_service_name,
   $service_provider        = $mysql::params::server_service_provider,
   $create_root_user        = $mysql::params::create_root_user,
   $create_root_my_cnf      = $mysql::params::create_root_my_cnf,
@@ -57,10 +57,49 @@ define mysql::server::resource::instance (
   include '::mysql::server::root_password'
   include '::mysql::server::providers'
 
-  if $remove_default_accounts {
-    class { '::mysql::server::account_security':
-      require => Anchor['mysql::server::end'],
-    }
+  class {'::mysql::server::config':
+    options             => $options,
+    includedir          => $includedir,
+    root_group          => $root_group,
+    purge_conf_dir      => $purge_conf_dir,
+    manage_config_file  => $manage_config_file,
+    config_file         => $config_file
+  }
+
+  class {'::mysql::server::binarylog':
+    options   => $options,
+    binarylog => $binarylog
+  }
+
+  class {'::mysql::server::installdb':
+    options             => $options,
+    manage_config_file  => $manage_config_file,
+    config_file         => $config_file,
+    mysql_group         => $mysql_group
+  }
+
+  class {'::mysql::server::service':
+    options               => $options,
+    real_service_manage   => $real_service_manage,
+    real_service_enabled  => $real_service_enabled,
+    service_name          => $service_name,
+    service_provider      => $service_provider,
+    override_options      => $override_options,
+    manage_config_file    => $manage_config_file
+  }
+
+  class {'::mysql::server::root_password':
+    options             => $options,
+    secret_file         => $secret_file,
+    create_root_user    => $create_root_user,
+    create_root_my_cnf  => $create_root_my_cnf,
+    root_password       => $root_password
+  }
+
+  class {'::mysql::server::providers':
+    users     => $users,
+    grants    => $grants,
+    databases => $databases
   }
 
   if $remove_default_accounts {
@@ -69,15 +108,21 @@ define mysql::server::resource::instance (
     }
   }
 
-  anchor { "mysql::server::start': }
-  anchor { "mysql::server::end': }
+  if $remove_default_accounts {
+    class { '::mysql::server::account_security':
+      require => Anchor['mysql::server::end'],
+    }
+  }
+
+  anchor { 'mysql::server::start': }
+  anchor { 'mysql::server::end': }
 
   if $restart {
     Class['mysql::server::config']
     ~> Class['mysql::server::service']
   }
 
-  Anchor['mysql::server::start'
+  Anchor['mysql::server::start']
   -> Class['mysql::server::config']
   -> Class['mysql::server::install']
   -> Class['mysql::server::binarylog']
@@ -85,5 +130,5 @@ define mysql::server::resource::instance (
   -> Class['mysql::server::service']
   -> Class['mysql::server::root_password']
   -> Class['mysql::server::providers']
-  -> Anchor["mysql::server::end"]
+  -> Anchor['mysql::server::end']
 }
